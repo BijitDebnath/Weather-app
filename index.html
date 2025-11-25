@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .weather-container {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 30px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      width: 350px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      outline: none;
+      width: 80%;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #ff9800;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: #e68900;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    .forecast {
+      margin-top: 25px;
+    }
+
+    .forecast-day {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    .forecast-day img {
+      vertical-align: middle;
+    }
+
+    .error {
+      color: #ff4c4c;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-container">
+    <h1>🌦 Weather App</h1>
+    <input type="text" id="locationInput" placeholder="Enter city name">
+    <br>
+    <button onclick="getWeather()">Search Weather</button>
+    <button onclick="getLocationWeather()">📍 Use My Location</button>
+    <div class="result" id="result"></div>
+    <div class="forecast" id="forecast"></div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    const apiKey = "859fe3e9ed5842fa902143436252908";
+
+    async function fetchWeather(query) {
+      const resultDiv = document.getElementById("result");
+      const forecastDiv = document.getElementById("forecast");
+      const errorDiv = document.getElementById("error");
+
+      resultDiv.innerHTML = "";
+      forecastDiv.innerHTML = "";
+      errorDiv.innerHTML = "";
+
+      try {
+        const url = `http://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${query}&days=5&aqi=yes&alerts=no`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("City not found");
+
+        const data = await response.json();
+
+        // Current weather
+        const temp = data.current.temp_c;
+        const condition = data.current.condition.text;
+        const icon = data.current.condition.icon;
+
+        resultDiv.innerHTML = `
+          <p>📍 Location: <b>${data.location.name}, ${data.location.country}</b></p>
+          <p>🌡 Temperature: <b>${temp} °C</b></p>
+          <p>🌤 Condition: ${condition}</p>
+          <img src="https:${icon}" alt="weather icon">
+        `;
+
+        // Forecast (5 days)
+        let forecastHTML = "<h3>📅 5-Day Forecast</h3>";
+        data.forecast.forecastday.forEach(day => {
+          const date = day.date;
+          const avgTemp = day.day.avgtemp_c;
+          const dayCondition = day.day.condition.text;
+          const dayIcon = day.day.condition.icon;
+
+          forecastHTML += `
+            <div class="forecast-day">
+              <p><b>${date}</b></p>
+              <p>🌡 Avg Temp: ${avgTemp} °C</p>
+              <p>🌤 ${dayCondition}</p>
+              <img src="https:${dayIcon}" alt="forecast icon">
+            </div>
+          `;
+        });
+
+        forecastDiv.innerHTML = forecastHTML;
+
+      } catch (error) {
+        errorDiv.innerHTML = "❌ Unable to fetch weather. Try again.";
+      }
+    }
+
+    function getWeather() {
+      const location = document.getElementById("locationInput").value;
+      if (!location) {
+        document.getElementById("error").innerHTML = "⚠ Please enter a location!";
+        return;
+      }
+      fetchWeather(location);
+    }
+
+    function getLocationWeather() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetchWeather(`${lat},${lon}`);
+          },
+          () => {
+            document.getElementById("error").innerHTML = "⚠ Location access denied!";
+          }
+        );
+      } else {
+        document.getElementById("error").innerHTML = "❌ Geolocation not supported.";
+      }
+    }
+
+    // Auto-detect weather on page load
+    window.onload = () => {
+      getLocationWeather();
+    };
+  </script>
+</body>
+</html>

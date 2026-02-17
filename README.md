@@ -1,1 +1,1 @@
-A basic weather app whivh shows the weather of today and next five days of a location
+A basic weather app which shows the weather of current day and next five days of a location
